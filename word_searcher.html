@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Searcher v3.0</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary:    #0a0a0a;
+            --bg-secondary:  #141414;
+            --bg-tertiary:   #202020;
+            --border-color:  #2e2e2e;
+            --text-primary:  #ffffff;
+            --text-secondary:#b0b0b0;
+            --text-muted:    #555555;
+            --accent:        #ffffff;
+            --favorite:      #f5c518;
+            --highlight-bg:  #3a3a00;
+            --highlight-border: #6a6a00;
+            --transition:    all 0.18s ease;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ÉCRAN 1 : LANGUE */
+        #languageSelection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        #languageSelection h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        #languageSelection > p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 4rem;
+        }
+
+        .language-options {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .lang-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 3rem 4rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 200px;
+            color: var(--text-primary);
+        }
+
+        .lang-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .lang-btn h2 { font-size: 2rem; font-weight: 400; margin-bottom: 0.5rem; }
+        .lang-btn p { font-size: 0.875rem; color: var(--text-muted); margin: 0; }
+
+        /* ÉCRAN 2 : TRI */
+        #sortSelection {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 3rem;
+            text-align: center;
+            position: relative;
+        }
+
+        #sortSelection h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        #sortSelection > p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 4rem;
+        }
+
+        .sort-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .sort-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 1.75rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+            color: var(--text-primary);
+        }
+
+        .sort-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        }
+
+        .sort-btn.advanced { border-color: var(--favorite); }
+        .sort-btn.advanced h3 { color: var(--favorite); }
+
+        .sort-btn h3 { font-size: 1.05rem; font-weight: 500; margin-bottom: 0.4rem; }
+        .sort-btn p { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+
+        .back-btn {
+            position: absolute;
+            top: 2rem; left: 2rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+
+        .back-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* ÉCRAN TRI AVANCÉ (Modal) */
+        #advancedSort {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .advanced-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .advanced-panel h2 {
+            font-size: 1.75rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            margin-bottom: 2rem;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .slider-container {
+            margin-bottom: 1rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.813rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .slider-label .value {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--favorite);
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .advanced-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .advanced-buttons button {
+            flex: 1;
+            padding: 0.875rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.938rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .apply-btn {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+        }
+
+        .apply-btn:hover {
+            background: var(--favorite);
+            transform: translateY(-2px);
+        }
+
+        .cancel-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .cancel-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        /* ÉCRAN 3 : APP */
+        #mainApp { display: none; flex-direction: column; height: 100vh; }
+
+        header {
+            padding: 1.25rem 3rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        header h1 { font-size: 1.25rem; font-weight: 400; }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .info-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.9rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+        }
+
+        .fav-counter {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .fav-counter .star { color: var(--favorite); }
+        .fav-counter .count { color: var(--accent); font-weight: 600; }
+
+        .change-btn, #toggleCompound, #exportBtn, #statsBtn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+
+        .change-btn:hover, #toggleCompound:hover, #exportBtn:hover, #statsBtn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        #toggleCompound.active {
+            border-color: var(--favorite);
+            color: var(--favorite);
+        }
+
+        /* Saisie */
+        .search-container {
+            padding: 2.5rem 3rem 2rem;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #searchDisplay {
+            font-size: 2.25rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        #searchDisplay.flash {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+
+        #searchDisplay::after {
+            content: '|';
+            animation: blink 1s infinite;
+            margin-left: 8px;
+            opacity: 0.5;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 0.5; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .shortcuts {
+            margin-top: 1.5rem;
+            font-size: 0.813rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .shortcuts kbd {
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-family: monospace;
+            font-size: 0.75rem;
+            margin-right: 0.25rem;
+        }
+
+        .results-info {
+            padding: 1rem 3rem;
+            background: var(--bg-secondary);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #results {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 3rem 3rem;
+        }
+
+        #results::-webkit-scrollbar { width: 8px; }
+        #results::-webkit-scrollbar-track { background: var(--bg-primary); }
+        #results::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        #results::-webkit-scrollbar-thumb:hover { background: var(--border-color); }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .word-item {
+            background: var(--bg-secondary);
+            padding: 1.25rem 1.5rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 400;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            word-break: break-word;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .word-item:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .word-text { flex: 1; }
+
+        /* MEILLEUR HIGHLIGHT - Sans changer le layout */
+        .word-item .match {
+            background: var(--highlight-bg);
+            border-bottom: 2px solid var(--highlight-border);
+            padding: 0;
+            border-radius: 0;
+            font-weight: inherit;
+            display: inline;
+        }
+
+        .favorite-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            opacity: 0.3;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .favorite-btn:hover {
+            opacity: 0.6;
+            transform: scale(1.1);
+        }
+
+        .favorite-btn.active {
+            opacity: 1;
+            color: var(--favorite);
+            animation: starPop 0.3s ease;
+        }
+
+        @keyframes starPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .word-item.is-favorite {
+            background: var(--bg-tertiary);
+            border-color: var(--favorite);
+        }
+
+        .word-item.is-favorite::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--favorite);
+            border-radius: 10px 0 0 10px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 5rem 2rem;
+            font-size: 1.125rem;
+            color: var(--text-muted);
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 3rem 2rem;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .error strong { color: var(--text-primary); }
+
+        /* MODAL STATISTIQUES */
+        #statsModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .stats-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .stats-panel h2 {
+            font-size: 1.75rem;
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-item:last-child { border-bottom: none; }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.938rem;
+        }
+
+        .stat-value {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.938rem;
+        }
+
+        .close-stats {
+            margin-top: 2rem;
+            width: 100%;
+            padding: 0.875rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .close-stats:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header, .search-container, .results-info, #results {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+
+            #searchDisplay { font-size: 2rem; }
+
+            .word-grid { grid-template-columns: 1fr; }
+
+            .language-options { flex-direction: column; }
+
+            .sort-options { grid-template-columns: 1fr; }
+
+            .advanced-panel { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ÉCRAN 1 : LANGUE -->
+    <div id="languageSelection">
+        <h1>Word Searcher v3.0</h1>
+        <p>Choisissez votre langue</p>
+        <div class="language-options">
+            <button class="lang-btn" onclick="selectLanguage('fr')">
+                <h2>Français</h2>
+                <p>French dictionary</p>
+            </button>
+            <button class="lang-btn" onclick="selectLanguage('en')">
+                <h2>English</h2>
+                <p>English dictionary</p>
+            </button>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 2 : TRI -->
+    <div id="sortSelection">
+        <button class="back-btn" onclick="backToLanguage()">← Retour</button>
+        <h1>Mode de tri</h1>
+        <p class="subtitle" id="languageIndicator"></p>
+        <p>Choisissez comment trier les résultats</p>
+        <div class="sort-options">
+            <button class="sort-btn" onclick="startApp('length-asc')">
+                <h3>Longueur ↑</h3>
+                <p>Courts en premier</p>
+            </button>
+            <button class="sort-btn" onclick="startApp('length-desc')">
+                <h3>Longueur ↓</h3>
+                <p>Longs en premier</p>
+            </button>
+            <button class="sort-btn" onclick="startApp('frequency-desc')">
+                <h3>Fréquence ↑</h3>
+                <p>Populaires en premier</p>
+            </button>
+            <button class="sort-btn" onclick="startApp('frequency-asc')">
+                <h3>Fréquence ↓</h3>
+                <p>Rares en premier</p>
+            </button>
+            <button class="sort-btn" onclick="startApp('random')">
+                <h3>Aléatoire</h3>
+                <p>Ordre aléatoire</p>
+            </button>
+            <button class="sort-btn advanced" onclick="openAdvancedSort()">
+                <h3>Tri Avancé</h3>
+                <p>Filtres personnalisés</p>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL : TRI AVANCÉ -->
+    <div id="advancedSort">
+        <div class="advanced-panel">
+            <h2>Tri Avancé</h2>
+            
+            <div class="filter-group">
+                <label>Longueur des mots</label>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Minimum</span>
+                        <span class="value" id="minLenValue">1</span>
+                    </div>
+                    <input type="range" id="minLen" min="1" max="30" value="1" oninput="updateSlider('minLen')">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Maximum</span>
+                        <span class="value" id="maxLenValue">30</span>
+                    </div>
+                    <input type="range" id="maxLen" min="1" max="30" value="30" oninput="updateSlider('maxLen')">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Options de filtrage</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="onlyVowels">
+                    <label for="onlyVowels">Uniquement voyelles</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="onlyConsonants">
+                    <label for="onlyConsonants">Uniquement consonnes</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="noDuplicates">
+                    <label for="noDuplicates">Sans lettres doublées</label>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Tri des résultats</label>
+                <select id="advancedSortMode" style="width: 100%; padding: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.938rem;">
+                    <option value="length-asc">Longueur croissante</option>
+                    <option value="length-desc">Longueur décroissante</option>
+                    <option value="frequency-desc">Fréquence décroissante</option>
+                    <option value="frequency-asc">Fréquence croissante</option>
+                    <option value="random">Aléatoire</option>
+                </select>
+            </div>
+
+            <div class="advanced-buttons">
+                <button class="cancel-btn" onclick="closeAdvancedSort()">Annuler</button>
+                <button class="apply-btn" onclick="applyAdvancedSort()">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉCRAN 3 : APP -->
+    <div id="mainApp">
+        <header>
+            <h1>Word Searcher</h1>
+            <div class="header-controls">
+                <div class="info-badge">
+                    <span id="currentLanguage"></span> • <span id="currentSortMode"></span>
+                </div>
+                <div class="fav-counter">
+                    <span class="star">★</span>
+                    <span class="count" id="favCount">0</span>
+                </div>
+                <button id="toggleCompound" onclick="toggleCompound()" title="Masquer/Afficher les mots composés">
+                    Composés: <span id="compoundState">ON</span>
+                </button>
+                <button id="statsBtn" onclick="showStats()">Stats</button>
+                <button id="exportBtn" onclick="exportResults()">Export</button>
+                <button class="change-btn" onclick="resetToSortSelection()">Changer</button>
+            </div>
+        </header>
+
+        <div class="search-container">
+            <div id="searchDisplay"></div>
+            <div class="shortcuts">
+                <span><kbd>Ctrl</kbd><kbd>A</kbd> Tout sélectionner</span>
+                <span><kbd>Retour</kbd> Supprimer 1 lettre</span>
+                <span><kbd>Ctrl</kbd><kbd>Retour</kbd> Tout effacer</span>
+                <span><kbd>Echap</kbd> Effacer</span>
+            </div>
+        </div>
+
+        <div class="results-info">
+            <span id="resultCount">Chargement...</span>
+            <span id="searchQuery"></span>
+        </div>
+
+        <div id="results">
+            <div class="loading">Chargement du dictionnaire...</div>
+        </div>
+    </div>
+
+    <!-- MODAL : STATISTIQUES -->
+    <div id="statsModal">
+        <div class="stats-panel">
+            <h2>Statistiques</h2>
+            <div id="statsContent"></div>
+            <button class="close-stats" onclick="closeStats()">Fermer</button>
+        </div>
+    </div>
+
+    <script>
+        // VARIABLES GLOBALES
+        let words = [];
+        let searchTerm = '';
+        let sortMode = '';
+        let currentLang = '';
+        let currentResults = [];
+        let renderedCount = 0;
+        let debounceTimer = null;
+        let favorites = new Set();
+        let hideCompound = false;
+
+        // Filtres avancés
+        let advancedFilters = {
+            minLen: 1,
+            maxLen: 30,
+            onlyVowels: false,
+            onlyConsonants: false,
+            noDuplicates: false
+        };
+
+        const PAGE = 100;
+
+        const sortModeNames = {
+            'length-asc': 'Courts → Longs',
+            'length-desc': 'Longs → Courts',
+            'frequency-desc': 'Populaires',
+            'frequency-asc': 'Rares',
+            'random': 'Aléatoire',
+            'advanced': 'Tri Avancé'
+        };
+
+        const languageNames = {
+            'fr': 'Français',
+            'en': 'English'
+        };
+
+        const languageFiles = {
+            'fr': 'wordlist_fr.txt',
+            'en': 'wordlist_eng.txt'
+        };
+
+        // FAVORIS (localStorage)
+        function loadFavorites() {
+            try {
+                const stored = localStorage.getItem(`favorites_${currentLang}`);
+                favorites = stored ? new Set(JSON.parse(stored)) : new Set();
+                updateFavCounter();
+            } catch (e) {
+                favorites = new Set();
+            }
+        }
+
+        function saveFavorites() {
+            try {
+                localStorage.setItem(`favorites_${currentLang}`, JSON.stringify([...favorites]));
+                updateFavCounter();
+            } catch (e) {
+                console.error('Impossible de sauvegarder les favoris');
+            }
+        }
+
+        function toggleFavorite(idx) {
+            if (!currentResults[idx]) return;
+            const word = currentResults[idx].orig;
+            const lower = word.toLowerCase();
+            
+            if (favorites.has(lower)) {
+                favorites.delete(lower);
+            } else {
+                favorites.add(lower);
+            }
+            
+            saveFavorites();
+            renderSearch();
+        }
+
+        function isFav(word) {
+            return favorites.has(word.toLowerCase());
+        }
+
+        function updateFavCounter() {
+            document.getElementById('favCount').textContent = favorites.size;
+        }
+
+        // NAVIGATION ÉCRANS
+        function selectLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('languageSelection').style.display = 'none';
+            document.getElementById('sortSelection').style.display = 'flex';
+            document.getElementById('languageIndicator').textContent = languageNames[lang];
+        }
+
+        function backToLanguage() {
+            document.getElementById('sortSelection').style.display = 'none';
+            document.getElementById('languageSelection').style.display = 'flex';
+        }
+
+        function startApp(mode) {
+            sortMode = mode;
+            document.getElementById('sortSelection').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+            document.getElementById('currentSortMode').textContent = sortModeNames[mode];
+            document.getElementById('currentLanguage').textContent = languageNames[currentLang];
+            loadFavorites();
+            loadDictionary();
+        }
+
+        function resetToSortSelection() {
+            searchTerm = '';
+            words = [];
+            document.getElementById('mainApp').style.display = 'none';
+            document.getElementById('sortSelection').style.display = 'flex';
+            document.getElementById('searchDisplay').textContent = '';
+        }
+
+        // TRI AVANCÉ
+        function openAdvancedSort() {
+            document.getElementById('advancedSort').style.display = 'flex';
+        }
+
+        function closeAdvancedSort() {
+            document.getElementById('advancedSort').style.display = 'none';
+        }
+
+        function updateSlider(id) {
+            const slider = document.getElementById(id);
+            const value = document.getElementById(id + 'Value');
+            value.textContent = slider.value;
+        }
+
+        function applyAdvancedSort() {
+            advancedFilters.minLen = parseInt(document.getElementById('minLen').value);
+            advancedFilters.maxLen = parseInt(document.getElementById('maxLen').value);
+            advancedFilters.onlyVowels = document.getElementById('onlyVowels').checked;
+            advancedFilters.onlyConsonants = document.getElementById('onlyConsonants').checked;
+            advancedFilters.noDuplicates = document.getElementById('noDuplicates').checked;
+            
+            const selectedSort = document.getElementById('advancedSortMode').value;
+            sortMode = 'advanced';
+            
+            // Stocker le mode de tri interne pour le tri avancé
+            advancedFilters.sortMode = selectedSort;
+            
+            closeAdvancedSort();
+            document.getElementById('sortSelection').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+            document.getElementById('currentSortMode').textContent = 'Tri Avancé';
+            document.getElementById('currentLanguage').textContent = languageNames[currentLang];
+            loadFavorites();
+            loadDictionary();
+        }
+
+        // TOGGLE COMPOSÉS
+        function toggleCompound() {
+            hideCompound = !hideCompound;
+            const btn = document.getElementById('toggleCompound');
+            const state = document.getElementById('compoundState');
+            state.textContent = hideCompound ? 'OFF' : 'ON';
+            btn.classList.toggle('active', hideCompound);
+            renderSearch();
+        }
+
+        // CHARGEMENT DU DICTIONNAIRE
+        function parseAndIndexWords(text) {
+            const lines = text.split('\n');
+            const seen = new Set();
+            words = [];
+            const commonLetters = 'eaistnruold';
+            for (const line of lines) {
+                const orig = line.trim();
+                if (!orig) continue;
+                const low = orig.toLowerCase();
+                if (seen.has(low)) continue;
+                seen.add(low);
+                let freq = Math.max(0, 10 - orig.length) * 5;
+                for (let c = 0; c < low.length; c++) {
+                    freq += commonLetters.includes(low[c]) ? 10 : 1;
+                }
+                words.push({ orig, low, compound: /[\s\-]/.test(orig), freq, len: orig.length });
+            }
+            console.log(`${words.length} mots indexés (${currentLang})`);
+            renderSearch();
+        }
+
+        function loadDictionary() {
+            const resultsEl = document.getElementById('results');
+            const filename = languageFiles[currentLang];
+
+            resultsEl.innerHTML = `
+                <div class="error" style="text-align:center; padding: 3rem 2rem;">
+                    <strong style="font-size:1.1rem;">Charger le dictionnaire</strong><br><br>
+                    Sélectionne le fichier <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px;">${filename}</code> depuis ton ordinateur.<br><br>
+                    <label style="
+                        display:inline-block;
+                        margin-top:0.5rem;
+                        padding:0.75rem 1.75rem;
+                        background:var(--accent);
+                        color:var(--bg-primary);
+                        border-radius:8px;
+                        cursor:pointer;
+                        font-weight:600;
+                        font-size:0.95rem;
+                        transition:var(--transition);
+                    " onmouseover="this.style.background='var(--favorite)'" onmouseout="this.style.background='var(--accent)'">
+                        Choisir le fichier
+                        <input type="file" accept=".txt" style="display:none;" onchange="handleFileLoad(event)">
+                    </label>
+                    <br><br>
+                    <small style="color:var(--text-muted);">Aucun serveur nécessaire, le fichier reste sur ton ordinateur.</small>
+                </div>`;
+        }
+
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const resultsEl = document.getElementById('results');
+            resultsEl.innerHTML = '<div class="loading">Chargement du dictionnaire…</div>';
+            const reader = new FileReader();
+            reader.onload = (e) => parseAndIndexWords(e.target.result);
+            reader.onerror = () => {
+                resultsEl.innerHTML = '<div class="error"><strong>Erreur lors de la lecture du fichier.</strong></div>';
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        // TRI (favoris toujours en tête)
+        function sortEntries(entries, mode) {
+            const favs = entries.filter(e => isFav(e.low));
+            const nonFavs = entries.filter(e => !isFav(e.low));
+
+            const actualMode = mode === 'advanced' ? advancedFilters.sortMode : mode;
+
+            const cmp = (a, b) => {
+                switch (actualMode) {
+                    case 'length-asc':     return a.len - b.len || a.low.localeCompare(b.low);
+                    case 'length-desc':    return b.len - a.len || a.low.localeCompare(b.low);
+                    case 'frequency-desc': return b.freq - a.freq;
+                    case 'frequency-asc':  return a.freq - b.freq;
+                    case 'random':         return Math.random() - 0.5;
+                    default:               return 0;
+                }
+            };
+
+            favs.sort(cmp);
+            nonFavs.sort(cmp);
+            return [...favs, ...nonFavs];
+        }
+
+        // FILTRAGE (avec filtres avancés)
+        function filterWords(query) {
+            if (!query) return [];
+            const out = [];
+            const vowels = 'aeiouyàâäéèêëïîôùûüÿæœ';
+            
+            for (let i = 0; i < words.length; i++) {
+                const w = words[i];
+                
+                // Filtre composés
+                if (hideCompound && w.compound) continue;
+                
+                // Filtre recherche
+                if (!w.low.includes(query)) continue;
+                
+                // Filtres avancés (uniquement en mode advanced)
+                if (sortMode === 'advanced') {
+                    // Longueur
+                    if (w.len < advancedFilters.minLen || w.len > advancedFilters.maxLen) continue;
+                    
+                    // Uniquement voyelles
+                    if (advancedFilters.onlyVowels) {
+                        let allVowels = true;
+                        for (let c of w.low) {
+                            if (!vowels.includes(c)) {
+                                allVowels = false;
+                                break;
+                            }
+                        }
+                        if (!allVowels) continue;
+                    }
+                    
+                    // Uniquement consonnes
+                    if (advancedFilters.onlyConsonants) {
+                        let allConsonants = true;
+                        for (let c of w.low) {
+                            if (vowels.includes(c)) {
+                                allConsonants = false;
+                                break;
+                            }
+                        }
+                        if (!allConsonants) continue;
+                    }
+                    
+                    // Sans lettres doublées
+                    if (advancedFilters.noDuplicates) {
+                        let hasDuplicates = false;
+                        for (let j = 0; j < w.low.length - 1; j++) {
+                            if (w.low[j] === w.low[j + 1]) {
+                                hasDuplicates = true;
+                                break;
+                            }
+                        }
+                        if (hasDuplicates) continue;
+                    }
+                }
+                
+                out.push(w);
+            }
+            return out;
+        }
+
+        // RENDU
+        function escapeHtml(s) {
+            return s
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function renderSlice(container, entries, from, to, escapedQuery) {
+            const reHL = new RegExp(`(${escapedQuery})`, 'gi');
+            const parts = [];
+
+            for (let i = from; i < to; i++) {
+                const e = entries[i];
+                const safe = escapeHtml(e.orig);
+                const hl = safe.replace(reHL, '<span class="match">$1</span>');
+                const fav = isFav(e.low);
+                const tip = fav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+
+                parts.push(
+                    `<div class="word-item${fav ? ' is-favorite' : ''}">`,
+                    `<span class="word-text">${hl}</span>`,
+                    `<button class="favorite-btn${fav ? ' active' : ''}" onclick="toggleFavorite(${i})" title="${tip}">★</button>`,
+                    `</div>`
+                );
+            }
+
+            container.insertAdjacentHTML('beforeend', parts.join(''));
+        }
+
+        // RECHERCHE PRINCIPALE
+        function renderSearch() {
+            const query = searchTerm.toLowerCase();
+            const searchDisplay = document.getElementById('searchDisplay');
+            const resultsEl = document.getElementById('results');
+            const resultCount = document.getElementById('resultCount');
+            const searchQueryEl = document.getElementById('searchQuery');
+
+            searchDisplay.textContent = searchTerm;
+            searchQueryEl.textContent = query ? `"${query}"` : '';
+
+            if (!query) {
+                resultCount.textContent = `${words.length.toLocaleString('fr-FR')} mots`;
+                resultsEl.innerHTML = '<div class="no-results">Tapez pour commencer</div>';
+                currentResults = [];
+                return;
+            }
+
+            const filtered = filterWords(query);
+            currentResults = sortEntries(filtered, sortMode);
+            renderedCount = 0;
+
+            const n = currentResults.length;
+            resultCount.textContent = `${n.toLocaleString('fr-FR')} résultat${n !== 1 ? 's' : ''}`;
+
+            if (n === 0) {
+                resultsEl.innerHTML = '<div class="no-results">Aucun résultat</div>';
+                return;
+            }
+
+            resultsEl.innerHTML = '<div class="word-grid" id="wordGrid"></div>';
+            const grid = document.getElementById('wordGrid');
+            const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const end = Math.min(PAGE, n);
+            renderSlice(grid, currentResults, 0, end, escapedQuery);
+            renderedCount = end;
+
+            resultsEl.onscroll = null;
+            if (renderedCount < n) {
+                resultsEl.onscroll = () => loadMore(escapedQuery);
+            }
+        }
+
+        // SCROLL INFINI
+        function loadMore(escapedQuery) {
+            const resultsEl = document.getElementById('results');
+            const grid = document.getElementById('wordGrid');
+            if (!grid) return;
+
+            if (resultsEl.scrollHeight - resultsEl.scrollTop - resultsEl.clientHeight > 350) return;
+
+            const from = renderedCount;
+            const to = Math.min(renderedCount + PAGE, currentResults.length);
+            renderSlice(grid, currentResults, from, to, escapedQuery);
+            renderedCount = to;
+
+            if (renderedCount >= currentResults.length) resultsEl.onscroll = null;
+        }
+
+        // STATISTIQUES
+        function showStats() {
+            const modal = document.getElementById('statsModal');
+            const content = document.getElementById('statsContent');
+            
+            if (currentResults.length === 0) {
+                content.innerHTML = '<div class="stat-item"><span class="stat-label">Aucune statistique disponible</span></div>';
+            } else {
+                const avgLen = (currentResults.reduce((sum, w) => sum + w.len, 0) / currentResults.length).toFixed(1);
+                const minLen = Math.min(...currentResults.map(w => w.len));
+                const maxLen = Math.max(...currentResults.map(w => w.len));
+                
+                // Lettres les plus courantes
+                const letterCounts = {};
+                currentResults.forEach(w => {
+                    for (let c of w.low) {
+                        letterCounts[c] = (letterCounts[c] || 0) + 1;
+                    }
+                });
+                const topLetters = Object.entries(letterCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([l, c]) => `${l} (${c})`)
+                    .join(', ');
+                
+                content.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Résultats</span>
+                        <span class="stat-value">${currentResults.length}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Longueur moyenne</span>
+                        <span class="stat-value">${avgLen} lettres</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Longueur min/max</span>
+                        <span class="stat-value">${minLen} / ${maxLen}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Favoris</span>
+                        <span class="stat-value">${favorites.size}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Lettres courantes</span>
+                        <span class="stat-value">${topLetters}</span>
+                    </div>
+                `;
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeStats() {
+            document.getElementById('statsModal').style.display = 'none';
+        }
+
+        // EXPORT
+        function exportResults() {
+            if (currentResults.length === 0) {
+                alert('Aucun résultat à exporter');
+                return;
+            }
+            
+            const text = currentResults.map(w => w.orig).join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `word_searcher_${searchTerm || 'results'}_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // CLAVIER
+        function scheduleSearch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(renderSearch, 60);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('mainApp').style.display !== 'flex') return;
+
+            // Echap pour effacer
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                searchTerm = '';
+                document.getElementById('searchDisplay').textContent = '';
+                scheduleSearch();
+                return;
+            }
+
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                const d = document.getElementById('searchDisplay');
+                d.classList.add('flash');
+                setTimeout(() => d.classList.remove('flash'), 350);
+                return;
+            }
+
+            if (e.ctrlKey && e.key === 'Backspace') {
+                e.preventDefault();
+                searchTerm = '';
+                document.getElementById('searchDisplay').textContent = '';
+                scheduleSearch();
+                return;
+            }
+
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                searchTerm = searchTerm.slice(0, -1);
+                document.getElementById('searchDisplay').textContent = searchTerm;
+                scheduleSearch();
+                return;
+            }
+
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                e.preventDefault();
+                searchTerm += e.key;
+                document.getElementById('searchDisplay').textContent = searchTerm;
+                scheduleSearch();
+            }
+        });
+
+        // Fermer les modals en cliquant à l'extérieur
+        document.getElementById('advancedSort').addEventListener('click', (e) => {
+            if (e.target.id === 'advancedSort') closeAdvancedSort();
+        });
+
+        document.getElementById('statsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'statsModal') closeStats();
+        });
+    </script>
+</body>
+</html>
